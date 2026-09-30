@@ -1,37 +1,569 @@
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dois caminhos • Laboratório de entrega</title><style>
-:root{color-scheme:dark;--bg:#10151f;--panel:#192231;--line:#334155;--text:#e7edf5;--muted:#b0bfd0;--a:#ffbd73;--b:#6be0ca}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,sans-serif}header,main,footer{max-width:1500px;margin:auto;padding:24px}h1{font-size:30px;margin:8px 0}h2{margin:0;font-size:22px}p{color:var(--muted);line-height:1.6}button,select,input{font:inherit;color:var(--text);background:#111a28;border:1px solid var(--line);border-radius:7px;padding:8px}button{cursor:pointer}button:hover{border-color:var(--b)}button.primary{background:var(--b);color:#10221e;font-weight:700}label{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:9px 0}input[type=number]{width:95px}input[type=checkbox]{accent-color:var(--b)}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.split{display:grid;grid-template-columns:1fr 1fr;gap:20px}.side{background:var(--panel);border-radius:16px;padding:20px;border-top:4px solid var(--a)}.side.ai{border-color:var(--b)}.tag{font-size:12px;letter-spacing:2px;color:var(--muted)}.scene{height:180px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#2e3f55,transparent 70%);margin:12px 0}.scene svg{height:180px;width:100%}.monitor{fill:#0d1521;stroke:#8397af;stroke-width:2}.screenline{stroke:var(--a);stroke-width:3}.ai .screenline{stroke:var(--b)}.working .screenline{animation:pulse 1s infinite alternate}.working .arm{animation:typing .3s infinite alternate;transform-origin:center}@keyframes pulse{to{opacity:.3}}@keyframes typing{to{transform:translateY(2px)}}.activity{text-align:center;color:var(--muted);margin-top:-24px;position:relative;font-size:13px}.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:18px 0}.col{background:#111a28;border-radius:8px;padding:8px;min-height:145px}.col h3{font-size:11px;margin:0 0 9px;color:var(--muted)}.ticket{padding:7px 5px;margin-bottom:5px;background:#28374a;border-left:3px solid var(--a);border-radius:4px;font-size:11px}.ai .ticket{border-color:var(--b)}.ticket.bug{border-color:#ff7e8c}.ticket progress{width:100%;height:4px;accent-color:var(--b)}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{background:#111a28;padding:12px;border-radius:8px}.metric strong{display:block;font-size:21px;font-variant-numeric:tabular-nums}.metric span{font-size:12px;color:var(--muted)}details{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}summary{cursor:pointer;font-weight:600}.controls{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.chart{width:100%;height:150px;background:#111a28;border-radius:8px}.result{padding:18px;background:#1b2d35;border-radius:12px;margin:18px 0;line-height:1.6}table{border-collapse:collapse;width:100%;font-size:13px}td,th{text-align:left;padding:10px;border-bottom:1px solid var(--line)}a{color:var(--b)}.note{font-size:13px}.global{background:var(--panel);padding:16px;border-radius:12px;margin-bottom:20px}.global label{display:inline-flex;margin:8px 12px 8px 0}#clock{font-variant-numeric:tabular-nums;font-weight:700}.legend{color:var(--muted);font-size:12px}@media(max-width:850px){.split{grid-template-columns:1fr}header,main,footer{padding:14px}.controls{grid-template-columns:1fr}.kanban{gap:3px}.col{padding:5px}h1{font-size:25px}}
-</style><header><div class="tag">LABORATÓRIO DE ENTREGA / MODELO EXPLORATÓRIO</div><h1>Dois caminhos para software funcionando</h1><p>O mesmo backlog, dois processos. Explore velocidade, qualidade e custo — incluindo revisão, retrabalho e limites do paralelismo.</p><div class="toolbar"><button class="primary" id="play">Iniciar</button><button id="step">+ 8 horas</button><button id="reset">Reiniciar</button><button id="finish">Concluir período</button><button id="batch">100 execuções</button><button id="export">Exportar resultado JSON</button><span id="clock">0 h / dia 0</span><label>Velocidade <select id="speed"><option value="1">1×</option><option value="8" selected>8×</option><option value="32">32×</option></select></label></div></header><main><div class="global"><label>Horizonte (dias úteis) <input id="days" type="number" min="5" max="120" value="30"></label><label>Itens no backlog <input id="n" type="number" min="10" max="200" value="60"></label><label>Semente <input id="seed" type="number" min="1" max="999999" value="42"></label><label>Complexidade <select id="complex"><option value="0.6">Baixa</option><option value="1" selected>Média</option><option value="1.8">Alta</option></select></label><p class="note">Alterações reiniciam a experiência. Uma jornada tem 8 horas; agentes também trabalham somente nessa janela. Custos em USD, valores ilustrativos editáveis. Não é uma previsão de desempenho real.</p></div><div class="split" id="sides"></div><div class="result" id="verdict">Inicie a simulação para observar o fluxo.</div><div id="batchResult"></div><details><summary>Como o modelo funciona • premissas, fórmulas e limites</summary><p>Todos os itens chegam no instante zero. Tamanhos variam de 4 a 14 horas-base × complexidade; cada lado recebe exatamente os mesmos itens. Etapas: descoberta (12%), implementação (53%), validação (25%) e deploy (10%). Esses tempos e todas as probabilidades são hipóteses didáticas, não médias de mercado.</p><p>Três modos de IA: assistente usa uma pessoa em todas as etapas; especificações usa descoberta humana com 50% de esforço adicional, implementação e deploy com agentes e validação integral humana; fábrica usa agentes em todas as etapas, com bloqueio humano antes de decisões críticas na descoberta e validações de alto impacto. Cada bloqueio exige 30% do esforço da etapa e o restante é automatizado. Os atributos de criticidade e impacto são sorteados por item, permanecem nas correções e respeitam os percentuais configurados. A especificação reduz apenas a probabilidade de rejeição funcional, conforme a entrada configurada; não reduz automaticamente bugs. Esses parâmetros são hipóteses, não efeitos comprovados.</p><p>Todos os agentes compartilham o limite de paralelismo; os itens respeitam WIP. A fração de orquestração reduz capacidade disponível humana e dos agentes para representar coordenação. Horas humanas ativas medem execução e bloqueios; intervenções críticas contam bloqueios concluídos. O custo humano continua cobrando a pessoa reservada durante todo o período, mesmo quando atua pontualmente; não pressupõe que sua capacidade liberada gera economia automaticamente. Os estudos de mercado calibram somente o modo assistente. Nos demais modos, o multiplicador de tempo é experimental e não acumula ganhos desses estudos.</p><p>Defeito por tentativa = risco-base × fator TDD × fator par × fator refatoração. Descoberta de defeitos na validação = 20% + 45 pontos com QA + 15 com CI (máximo 95%). Rejeição funcional usa a probabilidade configurada e é sempre identificada na validação. Cada falha retorna à implementação com 35% do esforço-base e repete validação e deploy. Um defeito escapado é detectado após 4 horas com observabilidade ou 24 sem ela; o item retorna ao backlog como BUG, aguarda no mínimo 0,5h e concorre pelo limite WIP. Bugs têm prioridade na entrada, sem interromper itens em andamento; pulam descoberta e seguem implementação → validação → deploy. O início original é preservado para o cycle time. Além de defeitos escapados, cada deploy pode revelar uma falha adicional de integração/ambiente, sorteada com a probabilidade configurada × os fatores de TDD, par e refatoração. O padrão de 10% é uma hipótese didática editável, não dado de mercado. Um item gera no máximo um incidente por deploy; reincidências são contadas separadamente. Até a descoberta, a entrega parece boa nos indicadores observáveis. O gráfico usa o estado verdadeiro simulado, incluindo defeitos latentes, que não seriam conhecidos num sistema real.</p><p>Efeitos hipotéticos: TDD +15% implementação e ×0,65 defeitos; par ×0,85 tempo humano e ×0,8 defeitos, cobrando duas pessoas durante toda a janela; refatoração +10% implementação e ×0,8 defeitos; CI +0,15h de validação e ×0,7 tempo de deploy; CD ×0,4 tempo de deploy, sem CD releases em lotes a cada 8h; QA +30% validação; observabilidade +0,1h deploy. Nenhum coeficiente dessas práticas foi inferido causalmente dos estudos citados. Não há dívida técnica acumulada, incidentes compartilhados, feriados ou manutenção futura além dos bugs simulados.</p><p>Custo humano = horas decorridas × custo/h × pessoas (inclui espera, revisão e ociosidade). Tokens = horas-agente efetivamente executadas × tokens/h, incluindo retrabalho e todas as etapas automatizadas. Custo IA = tokens de entrada × preço entrada / milhão + tokens de saída × preço saída / milhão + assinatura mensal × horas / 160. Não inclui infraestrutura, caches ou ferramentas externas.</p><p>Lead time e cycle time são médias até o primeiro deploy, em horas úteis: chegada → deploy e início → deploy. Throughput = primeiros deploys / semanas decorridas (40h). Bugs descobertos = número acumulado de incidentes (inclui reincidências). Itens afetados / implantados = itens distintos com incidente / itens com primeiro deploy. Incidentes / 100 deploys usa todos os deploys, inclusive correções. Correções implantadas conta incidentes com novo deploy; esse deploy pode gerar uma nova falha, portanto não garante ausência de reincidência. Bugs no backlog e em correção mostram o estoque atual. Assertividade = itens aprovados na primeira validação / itens já avaliados. Entregas úteis = implantadas, aceitas e sem defeito no estado verdadeiro atual. Custo/útil considera todo custo incorrido, inclusive trabalho ainda em andamento. Nenhum indicador de fluxo sozinho mede valor de negócio.</p><p>As 100 execuções variam a semente e preservam os mesmos itens e sorteios de risco para os dois lados em cada par. Intervalos P10–P90 expressam variabilidade do modelo, não intervalos de confiança dos estudos. Comparar pessoas exige contexto; esta simulação compara configurações de processo.</p></details><details open><summary>Evidências e cenários • o que foi medido</summary><table><thead><tr><th>Fonte</th><th>Resultado / contexto</th><th>Uso nesta simulação</th></tr></thead><tbody><tr><td><a href="https://www.microsoft.com/en-us/research/publication/the-effects-of-generative-ai-on-high-skilled-work-evidence-from-three-field-experiments-with-software-developers/" target="_blank" rel="noopener">Cui et al., três estudos de campo</a></td><td>4.867 desenvolvedores; +26,08% tarefas concluídas (erro padrão 10,3%). Assistência de código.</td><td>Multiplicador de tempo 1/1,2608 ≈ 0,793. Conversão ilustrativa de throughput em tempo sob capacidade constante.</td></tr><tr><td><a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/" target="_blank" rel="noopener">METR, julho/2025</a></td><td>16 mantenedores, 246 tarefas em repositórios conhecidos; +19% tempo com ferramentas do início de 2025.</td><td>Multiplicador 1,19. Não representa todas as pessoas nem ferramentas atuais.</td></tr><tr><td><a href="https://arxiv.org/abs/2302.06590" target="_blank" rel="noopener">Peng et al., 2023</a></td><td>Tarefa controlada: servidor HTTP em JavaScript; redução de 55,8% do tempo.</td><td>Multiplicador 0,442. Cenário otimista e delimitado; não evidência de ganho no SDLC completo.</td></tr><tr><td><a href="https://metr.org/blog/2026-02-24-uplift-update/" target="_blank" rel="noopener">METR, fevereiro/2026</a></td><td>Atualização discute dificuldades de seleção e medição com ferramentas mais recentes.</td><td>Não convertemos a atualização em um ganho universal para 2026.</td></tr><tr><td><a href="https://dora.dev/research/2025/dora-report/" target="_blank" rel="noopener">DORA 2025</a></td><td>Contexto organizacional de desenvolvimento assistido por IA.</td><td>Referência complementar; nenhum multiplicador causal extraído.</td></tr></tbody></table><p>Orquestração de ponta a ponta, taxa de bugs, preços e efeitos combinados das práticas são entradas hipotéticas. Os cenários não somam percentuais de pesquisas diferentes. Fontes consultadas em 30/09/2026.</p></details><details id="references2026"><summary>Referências de 2026 • resultados, contexto e uso no simulador</summary><p>Pesquisa atualizada em 30/09/2026. Publicação em 2026 não implica coleta em 2026 nem avaliação das ferramentas mais recentes. Os novos cenários são alternativas, não ganhos somados. Aplicam-se somente ao modo assistente; especificações e fábrica continuam usando hipóteses ajustáveis.</p>
-<h3>1. Echoes of AI — Borg et al. · 09/06/2026</h3><p><a href="https://link.springer.com/article/10.1007/s10664-026-10889-1" target="_blank" rel="noopener">Artigo em Empirical Software Engineering</a> · estudo com 151 participantes em duas fases, 95% profissionais, realizado em 2024. Na primeira fase, observacional, o uso de assistentes esteve associado a redução mediana de 30,7% do tempo para desenvolver uma feature em uma aplicação web Java. A segunda fase, randomizada, não encontrou diferenças significativas na evolução posterior em tempo ou qualidade. A primeira fase não randomizou o uso de IA; preferências e experiência podem influenciar o resultado.</p><p><b>No simulador:</b> novo cenário padrão para o assistente, tempo ×0,693 somente na implementação e correções. Essa localização do ganho é uma aproximação, não resultado por etapa. Não reduz bugs, rejeição funcional ou esforço de manutenção automaticamente. Não é evidência de ganho de 30,7% no processo inteiro.</p>
-<h3>2. METR — atualização do experimento · 24/02/2026</h3><p><a href="https://metr.org/blog/2026-02-24-uplift-update/" target="_blank" rel="noopener">Atualização metodológica e resultados preliminares</a> · experimento iniciado em agosto/2025: 57 desenvolvedores, 143 repositórios, mais de 800 tarefas. Nos participantes anteriores, estimativa de −18% no tempo, com intervalo de −38% a +9%; nos novos, −4%, intervalo de −15% a +9%. A METR aponta seleção de tarefas e participantes, mudança de remuneração e dificuldade de medir trabalho com agentes concorrentes.</p><p><b>No simulador:</b> dois cenários exploratórios, ×0,82 e ×0,96 no tempo humano. Intervalos cruzam efeito nulo e atraso; as estimativas não são calibração confiável de ferramentas atuais nem de fábricas autônomas. Os intervalos da pesquisa não são usados nas 100 execuções: estas variam somente tarefas e defeitos do modelo.</p>
-<h3>3. Meta-análise — Maier et al. · 06/05/2026</h3><p><a href="https://arxiv.org/abs/2605.04779" target="_blank" rel="noopener">Preprint: produtividade e aprendizagem em programação</a> · síntese de 23 estudos, 27 tamanhos de efeito, publicados entre 2019 e 2025. Produtividade: Hedges g = 0,33, IC95% [0,09; 0,58], com heterogeneidade relevante. Efeitos maiores em ambientes controlados e menores em empresas e open source. Aprendizagem sem efeito estatisticamente significativo.</p><p><b>No simulador:</b> referência de interpretação, sem multiplicador. g = 0,33 é efeito padronizado, não “33% mais produtividade”. Converter para horas exigiria métricas e distribuições comparáveis.</p>
-<h3>4. Anthropic — formação de competências · 29/01/2026</h3><p><a href="https://www.anthropic.com/research/AI-assistance-coding-skills" target="_blank" rel="noopener">Estudo sobre aprender uma nova biblioteca Python</a> · experimento randomizado com 52 engenheiros, majoritariamente juniores, aprendendo Trio. O ganho de velocidade não foi estatisticamente significativo. A avaliação de compreensão imediata foi inferior no grupo com IA; o modo de interação influenciou o aprendizado. Estudo de fornecedor, amostra pequena e tarefa de aprendizagem.</p><p><b>No simulador:</b> referência explicativa, sem bônus de velocidade ou penalidade automática de bugs. O estudo não mede defeitos em produção; aprendizagem e compreensão são dimensões que o modelo atual não representa.</p>
-<p><b>Como interpretar:</b> compare cenários, mantenha práticas e backlog iguais e calibre com dados locais. Não há nestas referências uma estimativa validada para desenvolvimento dirigido por especificações ou orquestração de ponta a ponta com intervenção humana pontual.</p></details></main><footer class="note">Um experimento para discutir premissas e gargalos. Calibre com dados do seu time antes de usar para decisões.</footer><script>
-const $=id=>document.getElementById(id), names=['Backlog','Descoberta','Implementação','Validação','Produção'];let time=0,running=false,states=[],history=[];
-const practices=[['tdd','TDD'],['pair','Programação em par (2 pessoas)'],['refactor','Refatoração'],['ci','Integração contínua'],['cd','Deploy contínuo'],['obs','Observabilidade'],['qa','QA / validação']];
-const scene=`<div class="scene"><svg viewBox="0 0 500 180" role="img" aria-label="Desenvolvedor visto de costas, sentado ao computador"><rect class="monitor" x="190" y="12" width="120" height="66" rx="6"/><path class="screenline" d="M204 28h73m-73 13h90m-90 13h50m-50 13h80"/><path stroke="#74879f" stroke-width="7" d="M250 78v12m-22 0h44"/><path stroke="#8397af" stroke-width="8" d="M112 98h276m-240 0v70m200-70v70"/><ellipse cx="250" cy="66" rx="21" ry="23" fill="#b69883"/><path d="M228 62q-3-35 23-27q26-5 21 30l-10-17-30 4" fill="#27303c"/><path d="M214 124v-26q36-21 72 0v26" fill="#62758d"/><path class="arm" d="M218 97l-35 6m99-6 35 6" stroke="#62758d" stroke-width="14" stroke-linecap="round"/><rect x="214" y="111" width="72" height="51" rx="16" fill="#263144" stroke="#74879f" stroke-width="2"/><path d="M250 162v12m-25 0h50" stroke="#74879f" stroke-width="5"/></svg></div>`;
-function number(i,key,label,value,min,max,step=1){return `<label>${label}<input id="${i}-${key}" type="number" value="${value}" min="${min}" max="${max}" step="${step}"></label>`}
-$('sides').innerHTML=[0,1].map(i=>`<section class="side ${i?'ai':''}"><div class="tag">${i?'ASSISTÊNCIA | ESPECIFICAÇÃO | ORQUESTRAÇÃO':'IMPLEMENTAÇÃO MANUAL'}</div><h2>${i?'Desenvolvedor com IA':'Desenvolvedor sem IA'}</h2>${scene}<div class="activity" id="activity${i}">Aguardando início</div><div class="kanban" id="board${i}"></div><div class="metrics" id="metrics${i}"></div><p class="legend">Entregas úteis acumuladas no estado atual • mesma escala nos dois gráficos</p><svg class="chart" id="chart${i}" viewBox="0 0 500 150" aria-label="Gráfico de entregas úteis"></svg>${i?`<details><summary>Configurar uso da IA e cenário de produtividade</summary><label>Modo de uso da IA <select id="workflow"><option value="assistant">IA como assistente</option><option value="specs">Desenvolvimento dirigido por especificações</option><option value="factory" selected>Orquestração de agentes / Fábrica IA</option></select></label><p class="note" id="workflowNote"></p><label>Cenário de produtividade do assistente <select id="scenario"><option value="echo2026" selected>2026 · Java / Echoes of AI (dados de 2024)</option><option value="metr26old">2026 · METR / participantes anteriores (exploratório)</option><option value="metr26new">2026 · METR / novos participantes (exploratório)</option><option value="field">Estudos de campo / referência histórica</option><option value="metr">Manutenção madura / METR</option><option value="lab">Tarefa delimitada</option><option value="neutral">Controle / sem efeito de IA</option></select></label><div class="note" id="scenarioNote"></div></details>`:''}<details open><summary>Configurar práticas e custos</summary><div class="controls">${practices.map(([k,l])=>`<label>${l}<input type="checkbox" id="${i}-${k}" ${['ci','cd','qa','obs'].includes(k)?'checked':''}></label>`).join('')}${number(i,'hour','USD / pessoa-hora',50,0,1000)}${number(i,'wip','Limite WIP',i?4:2,1,12)}${number(i,'risk','Defeito por tentativa (%)',20,0,95)}${number(i,'reject','Rejeição funcional (%)',10,0,95)}${number(i,'production','Falhas adicionais por deploy (%)',10,0,100)}${i?number(i,'agents','Agentes simultâneos',3,1,12)+number(i,'factor','Tempo-agente / tempo manual',.6,.1,3,.05)+number(i,'overhead','Orquestração humana (%)',25,0,80)+number(i,'tokens','Tokens / hora-agente',80000,0,10000000,1000)+number(i,'input','USD / milhão tokens entrada',3,0,1000,.1)+number(i,'output','USD / milhão tokens saída',15,0,1000,.1)+number(i,'share','Fração de saída (%)',20,0,100)+number(i,'subscription','Assinatura USD / mês',20,0,5000)+number(i,'clarity','Especificações: redução rejeição (%)',30,0,90)+number(i,'critical','Itens com decisão crítica (%)',25,0,100)+number(i,'impact','Itens de alto impacto (%)',30,0,100):''}</div><p class="note">Falhas adicionais: problemas de integração ou ambiente não cobertos pela validação. Probabilidade hipotética por deploy, reduzida por TDD, par e refatoração.</p><div class="note" id="effects${i}"></div><div class="note" id="buglog${i}"></div></details></section>`).join('');
-function val(id){return Number($(id).value)}function config(i){let c={};practices.forEach(([k])=>c[k]=$(i+'-'+k).checked);['hour','wip','risk','reject','production'].forEach(k=>c[k]=val(i+'-'+k));if(i)['agents','factor','overhead','tokens','input','output','share','subscription','clarity','critical','impact'].forEach(k=>c[k]=val(i+'-'+k));return c}
-function rand(seed,id,attempt,channel){let x=(seed+Math.imul(id+1,374761393)+Math.imul(attempt+1,668265263)+channel*1274126177)|0;x=Math.imul(x^(x>>>13),1274126177);return ((x^(x>>>16))>>>0)/4294967296}
-function workflow(){return $('workflow').value}function mode(){return workflow()==='assistant'?$('scenario').value:'agents'}function multiplier(c){return {echo2026:1,metr26old:.82,metr26new:.96,field:1/1.2608,metr:1.19,lab:.442,neutral:1}[mode()]??c.factor}
-function init(seed=val('seed')){time=0;history=[];states=[0,1].map(i=>({c:config(i),tokens:0,humanHours:0,interventions:0,incidents:[],deploys:0,items:Array.from({length:val('n')},(_,id)=>({id,base:(4+10*rand(seed,id,0,0))*val('complex'),stage:0,left:0,full:0,attempt:0,start:null,first:null,deployed:null,bad:false,everBug:false,bugPending:false,bugCount:0,returned:null,firstPass:null,seed,critical:rand(seed,id,0,5)<(i?config(i).critical/100:0),highImpact:rand(seed,id,0,6)<(i?config(i).impact/100:0),gateLeft:0}))}));render()}
-function effort(t,s,c,i){let e=t.base*[0,.12,.53,.25,.1][s];if(i&&workflow()==='specs'&&s===1)e*=1.5;if(s===2){if(t.attempt)e*=.35;if(c.tdd)e*=1.15;if(c.refactor)e*=1.1}if(s===3){if(c.qa)e*=1.3;if(c.ci)e+=.15}if(s===4){if(c.ci)e*=.7;if(c.cd)e*=.4;if(c.obs)e+=.1}return Math.max(.05,e)}
-function enter(t,s,c,i){t.stage=s;t.left=t.full=effort(t,s,c,i);t.gateLeft=i&&workflow()==='factory'?((s===1&&t.critical)||(s===3&&t.highImpact)?t.full*.3:0):0}
-function useful(s){return s.items.filter(t=>t.stage===5&&!t.bad).length}function cost(s,i){let c=s.c;return time*c.hour*(c.pair?2:1)+(i?s.tokens*((1-c.share/100)*c.input+c.share/100*c.output)/1e6+c.subscription*time/160:0)}
-function riskFactor(c){return (c.tdd?.65:1)*(c.pair?.8:1)*(c.refactor?.8:1)}
-function tick(){const dt=.125;if(time>=val('days')*8){running=false;return}time+=dt;states.forEach((s,i)=>{let c=s.c,agentMode=i&&mode()==='agents';for(let t of s.items){if(t.stage===5&&t.bad&&time-t.deployed>=(c.obs?4:24)){t.everBug=true;t.bugCount++;t.bugPending=true;t.returned=time;t.attempt++;t.stage=0;t.left=0;s.incidents.push({item:t.id+1,discovered:time,resolved:null})}}let active=s.items.filter(t=>t.stage>0&&t.stage<5).length;for(let t of [...s.items].sort((a,b)=>Number(b.bugPending)-Number(a.bugPending)||a.id-b.id)){if(t.stage===0&&active<c.wip&&(!t.bugPending||time-t.returned>=.5)){if(t.start===null)t.start=time;enter(t,t.bugPending?2:1,c,i);active++}}
-let human=dt*(agentMode?1-c.overhead/100:1)*(c.pair?1/.85:1),slots=agentMode?c.agents:0;
-// Human reviews first. Agent work never consumes an extra human worker.
-let queue=s.items.filter(t=>t.stage>0&&t.stage<5).sort((a,b)=>(b.stage===3)-(a.stage===3)||a.id-b.id);
-for(let t of queue){let factory=i&&workflow()==='factory';if(factory&&t.gateLeft>0){let review=Math.min(t.gateLeft,human);t.gateLeft-=review;t.left-=review;human-=review;s.humanHours+=review*(c.pair?.85:1);if(t.gateLeft>1e-8)continue;s.interventions++}let agent=agentMode&&(factory||(t.stage!==3&&t.stage!==1));if(agent&&slots<=0)continue;if(!agent&&human<=0)continue;let amount;if(agent){slots--;let raw=dt*(1-c.overhead/100);amount=raw/multiplier(c);let actual=Math.min(raw,t.left*multiplier(c));s.tokens+=actual*c.tokens}else{let factor=i&&!agentMode?(mode()==='echo2026'&&t.stage===2?.693:multiplier(c)):1;amount=Math.min(t.left,human/factor);human-=amount*factor;s.humanHours+=amount*factor*(c.pair?.85:1);if(i&&mode()!=='neutral')s.tokens+=amount*factor*c.tokens}t.left-=amount;if(t.left>1e-8)continue;
-if(t.stage===2){let risk=c.risk/100*riskFactor(c);t.bad=rand(t.seed,t.id,t.attempt,1)<risk;enter(t,3,c,i)}else if(t.stage===3){let reject=rand(t.seed,t.id,t.attempt,2)<c.reject/100*(i&&workflow()==='specs'?1-c.clarity/100:1);let detect=t.bad&&rand(t.seed,t.id,t.attempt,3)<Math.min(.95,.2+(c.qa?.45:0)+(c.ci?.15:0));if(t.firstPass===null)t.firstPass=!(reject||detect);if(reject||detect){t.attempt++;enter(t,2,c,i)}else enter(t,4,c,i)}else if(t.stage===4){if(!c.cd&&Math.floor(time/8)===Math.floor((time-dt)/8)){t.left=0;continue}if(t.bugPending){let incident=[...s.incidents].reverse().find(e=>e.item===t.id+1&&e.resolved===null);if(incident)incident.resolved=time;t.bugPending=false}t.bad=t.bad||rand(t.seed,t.id,t.attempt,4)<c.production/100*riskFactor(c);s.deploys++;t.stage=5;t.deployed=time;if(t.first===null)t.first=time}else enter(t,t.stage+1,c,i)} });if(Math.round(time*8)%8===0)history.push([time,...states.map(useful)])}
-function metrics(s,i){let deployed=s.items.filter(t=>t.first!==null),evaluated=s.items.filter(t=>t.firstPass!==null),avg=fn=>deployed.length?(deployed.reduce((a,t)=>a+fn(t),0)/deployed.length).toFixed(1)+' h':'—',money=cost(s,i),u=useful(s);return [['Entregas úteis',u],['Primeiros deploys',deployed.length],['Throughput / semana',time?(deployed.length/(time/40)).toFixed(1):'—'],['Lead time médio',avg(t=>t.first)],['Cycle time médio',avg(t=>t.first-t.start)],['Bugs de produção descobertos',s.incidents.length],['Itens afetados / implantados',deployed.length?(100*deployed.filter(t=>t.everBug).length/deployed.length).toFixed(1)+'%':'—'],['Incidentes / 100 deploys',s.deploys?(100*s.incidents.length/s.deploys).toFixed(1):'—'],['Bugs no backlog',s.items.filter(t=>t.stage===0&&t.bugPending).length],['Bugs em correção',s.items.filter(t=>t.stage>0&&t.stage<5&&t.bugPending).length],['Correções implantadas',s.incidents.filter(e=>e.resolved!==null).length],['Assertividade 1ª validação',evaluated.length?(100*evaluated.filter(t=>t.firstPass).length/evaluated.length).toFixed(0)+'%':'—'],['Custo total', '$'+money.toFixed(0)],['Custo / entrega útil',u?'$'+(money/u).toFixed(0):'—'],['Horas humanas ativas',s.humanHours.toFixed(1)+' h'],['Intervenções críticas',s.interventions],['Tokens consumidos',i?(s.tokens/1e6).toFixed(2)+' M':'0'],['Retrabalhos',s.items.reduce((a,t)=>a+t.attempt,0)],['Defeitos latentes (modelo)',s.items.filter(t=>t.stage===5&&t.bad).length]]}
-function render(){ $('clock').textContent=`${time.toFixed(1)} h / dia ${(time/8).toFixed(1)}`;$('play').textContent=running?'Pausar':'Iniciar';states.forEach((s,i)=>{$('metrics'+i).innerHTML=metrics(s,i).map(([k,v])=>`<div class="metric"><strong>${v}</strong><span>${k}</span></div>`).join('');$('board'+i).innerHTML=names.map((name,col)=>{let list=s.items.filter(t=>col===4?t.stage>=4:t.stage===col);return `<div class="col"><h3>${i&&workflow()==='specs'&&col===1?'Especificação':name} (${list.length})</h3>${list.sort((a,b)=>Number(b.bugPending)-Number(a.bugPending)||a.id-b.id).slice(0,4).map(t=>`<div class="ticket ${t.bugPending?'bug':''}" title="Item ${t.id+1}; esforço ${t.base.toFixed(1)}h; tentativa ${t.attempt+1}">#${String(t.id+1).padStart(2,'0')} ${i&&workflow()==='factory'&&t.gateLeft>0?'DECISÃO HUMANA':t.bugPending?'BUG · '+(t.stage===0?'aguarda':'correção'):t.stage===5?'✓':t.stage===4?'deploy':t.attempt?'retrabalho':''}${t.stage>0&&t.stage<5?`<progress max="1" value="${1-Math.max(0,t.left)/t.full}"></progress>`:''}</div>`).join('')}${list.length>4?`<small>+${list.length-4} itens</small>`:''}</div>`}).join('');let c=s.c;$('effects'+i).innerHTML=`<p><b>Efeito das práticas nesta configuração</b><br>Implementação: ×${((c.tdd?1.15:1)*(c.refactor?1.1:1)).toFixed(3)} esforço · tempo humano: ×${c.pair?'0,85':'1,00'} · pessoas: ${c.pair?2:1}.<br>Defeito por tentativa: ${(c.risk*riskFactor(c)).toFixed(1)}% · falha adicional por deploy: ${(c.production*riskFactor(c)).toFixed(1)}%.<br>Detecção na validação: ${(100*Math.min(.95,.2+(c.qa?.45:0)+(c.ci?.15:0))).toFixed(0)}% · validação: ×${c.qa?'1,30':'1,00'}${c.ci?' + 0,15h':''}.<br>Deploy: ×${((c.ci?.7:1)*(c.cd?.4:1)).toFixed(2)}${c.obs?' + 0,1h':''} · ${c.cd?'contínuo':'lotes a cada 8h'}. Detecção em produção: ${c.obs?4:24}h.</p>`;$('buglog'+i).innerHTML='<b>Últimos bugs de produção</b><br>'+ (s.incidents.length?s.incidents.slice(-5).reverse().map(e=>`#${e.item} · descoberto ${e.discovered.toFixed(1)}h → ${e.resolved===null?'aguarda / em correção':'corrigido '+e.resolved.toFixed(1)+'h'}`).join('<br>'):'Nenhum incidente descoberto até agora.');let active=s.items.filter(t=>t.stage>0&&t.stage<5);$('activity'+i).textContent=active.length?`${active.length} itens em WIP · ${s.items.filter(t=>t.stage===3).length} na validação`:'Sem trabalho em andamento';document.querySelectorAll('.scene')[i].classList.toggle('working',running&&active.length>0);let max=Math.max(5,...history.flatMap(h=>h.slice(1)));let points=history.map(h=>`${40+h[0]/(val('days')*8)*440},${125-h[i+1]/max*100}`).join(' ');$('chart'+i).innerHTML=`<path d="M40 15v110h440" stroke="#63748b" fill="none"/><polyline points="40,125 ${points}" stroke="${i?'#6be0ca':'#ffbd73'}" stroke-width="3" fill="none"/><text x="8" y="20" fill="#b0bfd0" font-size="12">${max}</text><text x="8" y="128" fill="#b0bfd0" font-size="12">0</text><text x="40" y="144" fill="#b0bfd0" font-size="12">0h</text><text x="425" y="144" fill="#b0bfd0" font-size="12">${val('days')*8}h</text>`});let a=useful(states[0]),b=useful(states[1]);$('verdict').textContent=time?`No mesmo período: manual ${a} entregas úteis; IA ${b}. Custo total: $${cost(states[0],0).toFixed(0)} e $${cost(states[1],1).toFixed(0)}. Compare custo por entrega e qualidade; não existe um vencedor único quando os objetivos divergem.`:'Inicie a simulação para observar o fluxo.'}
-const notes={echo2026:'Borg et al., publicação de junho/2026, dados de 2024: redução mediana observacional de 30,7% no tempo de desenvolvimento de uma feature Java. Aqui, ×0,693 somente na implementação (inclusive correções); outras etapas ficam ×1. Atribuição por etapa é hipótese de modelagem, não decomposição medida no estudo. Não altera bugs.',metr26old:'METR, atualização fev/2026 com dados de 2025: participantes anteriores, −18% tempo (IC −38% a +9%). ×0,82 aplicado ao trabalho humano como aproximação; estimativa frágil com seleção de tarefas e participantes. Não calibra fábrica com agentes.',metr26new:'METR, atualização fev/2026 com dados de 2025: novos participantes, −4% tempo (IC −15% a +9%). ×0,96 aplicado ao trabalho humano como aproximação; IC inclui ausência de ganho e atraso. Cenário exploratório, não efeito causal confiável.',agents:'Experimental: agentes automatizam descoberta, implementação e deploy; validação humana é o gargalo. Todos os ganhos são hipóteses configuráveis.',field:'Âncora de campo: +26,08% tarefas → multiplicador ilustrativo de tempo 0,793. Uma pessoa com assistente, sem agentes paralelos.',metr:'Âncora METR 2025: tempo ×1,19 em manutenção de projetos maduros. Uma pessoa com assistente.',lab:'Âncora Peng 2023: tempo ×0,442 numa tarefa delimitada. Extrapolação otimista para o fluxo; não validação ponta a ponta.',neutral:'Controle: mesmo tempo e capacidade nos dois lados; tokens desativados. Com práticas iguais, os resultados de fluxo devem coincidir.'};
-const workflowNotes={assistant:'A pessoa conduz todas as etapas, usando IA como apoio. Sem execução paralela de agentes. A referência selecionada define o multiplicador de tempo.',specs:'A pessoa escreve e valida especificações (+50% esforço de descoberta) e revisa toda implementação. Agentes implementam e fazem deploy; especificações reduzem a rejeição funcional conforme o parâmetro configurado.',factory:'Agentes executam todas as etapas. A pessoa atua apenas em decisões críticas e validações de alto impacto, antes de liberar a etapa. Frações configuráveis de itens recebem revisão humana equivalente a 30% do esforço da etapa.'};
-function update(){running=false;document.querySelectorAll('input[type=number]').forEach(e=>{if(!Number.isFinite(+e.value))e.value=e.min;e.value=Math.max(+e.min,Math.min(+e.max,+e.value))});$('scenarioNote').textContent=notes[mode()];['agents','factor','overhead'].forEach(k=>$('1-'+k).disabled=workflow()==='assistant');$('scenario').disabled=workflow()!=='assistant';$('1-clarity').disabled=workflow()!=='specs';['critical','impact'].forEach(k=>$('1-'+k).disabled=workflow()!=='factory');$('workflowNote').textContent=workflowNotes[workflow()];if(workflow()!=='assistant')$('scenarioNote').textContent='Modo experimental: ganhos, riscos e participação humana são hipóteses ajustáveis; os estudos de assistentes não calibram este processo.';init();$('batchResult').innerHTML=''}
-$('play').onclick=()=>{running=!running;render()};$('step').onclick=()=>{running=false;for(let j=0;j<64;j++)tick();render()};$('reset').onclick=()=>{running=false;init();$('batchResult').innerHTML=''};$('finish').onclick=()=>{running=false;while(time<val('days')*8)tick();render()};document.querySelectorAll('input,select').forEach(e=>{if(e.id!=='speed')e.onchange=update});
-$('batch').onclick=async()=>{running=false;$('batch').disabled=true;let results=[];let original=val('seed');for(let r=0;r<100;r++){init(original+r);while(time<val('days')*8)tick();results.push(states.map((s,i)=>({u:useful(s),cost:cost(s,i)})));if(r%10===0){$('batchResult').textContent=`Examinando ${r+1}/100 execuções…`;await new Promise(resolve=>setTimeout(resolve,0))}}init(original);while(time<val('days')*8)tick();render();let q=(a,p)=>a.sort((x,y)=>x-y)[Math.floor((a.length-1)*p)];$('batchResult').innerHTML=`<table><tr><th>100 sementes / hipótese atual</th><th>Manual</th><th>IA</th></tr><tr><td>Entregas úteis • mediana [P10–P90]</td>${[0,1].map(i=>{let a=results.map(r=>r[i].u);return `<td>${q(a,.5)} [${q(a,.1)}–${q(a,.9)}]</td>`}).join('')}</tr><tr><td>Custo/útil mediano (execuções com entrega)</td>${[0,1].map(i=>{let a=results.filter(r=>r[i].u).map(r=>r[i].cost/r[i].u);return `<td>${a.length?'$'+q(a,.5).toFixed(0):'—'}; ${100-a.length} sem entrega</td>`}).join('')}</tr></table><p class="note">IA teve mais entregas úteis em ${results.filter(r=>r[1].u>r[0].u).length}% das execuções; empate em ${results.filter(r=>r[1].u===r[0].u).length}%. Variabilidade simulada, não probabilidade científica de superioridade.</p>`;$('batch').disabled=false};
-$('export').onclick=()=>{let payload={model:'dois-caminhos-1.3',evidenceReviewDate:'2026-09-30',workflow:workflow(),scenario:mode(),seed:val('seed'),hours:time,horizonDays:val('days'),complexity:val('complex'),parameters:states.map(s=>s.c),metrics:states.map(metrics),history,items:states.map(s=>s.items),incidents:states.map(s=>s.incidents),deploys:states.map(s=>s.deploys)};let url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));let a=document.createElement('a');a.href=url;a.download='resultado-simulacao.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-let last=performance.now(),acc=0;function frame(now){acc+=Math.min(.5,(now-last)/1000)*val('speed');last=now;if(running){let count=Math.floor(acc);acc-=count;for(let j=0;j<count;j++)tick();render()}else acc=0;requestAnimationFrame(frame)}update();requestAnimationFrame(frame);
-</script></html>
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dois caminhos • Laboratório de entrega</title>
+<style>
+    :root {
+        color-scheme: dark;
+        --bg: #10151f;
+        --panel: #192231;
+        --line: #334155;
+        --text: #e7edf5;
+        --muted: #b0bfd0;
+        --a: #ffbd73;
+        --b: #6be0ca
+    }
+
+    * {
+        box-sizing: border-box
+    }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px system-ui, sans-serif
+    }
+
+    header,
+    main,
+    footer {
+        max-width: 1500px;
+        margin: auto;
+        padding: 24px
+    }
+
+    h1 {
+        font-size: 30px;
+        margin: 8px 0
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 22px
+    }
+
+    p {
+        color: var(--muted);
+        line-height: 1.6
+    }
+
+    button,
+    select,
+    input {
+        font: inherit;
+        color: var(--text);
+        background: #111a28;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 8px
+    }
+
+    button {
+        cursor: pointer
+    }
+
+    button:hover {
+        border-color: var(--b)
+    }
+
+    button.primary {
+        background: var(--b);
+        color: #10221e;
+        font-weight: 700
+    }
+
+    label {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin: 9px 0
+    }
+
+    input[type=number] {
+        width: 95px
+    }
+
+    input[type=checkbox] {
+        accent-color: var(--b)
+    }
+
+    .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center
+    }
+
+    .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px
+    }
+
+    .side {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 20px;
+        border-top: 4px solid var(--a)
+    }
+
+    .side.ai {
+        border-color: var(--b)
+    }
+
+    .tag {
+        font-size: 12px;
+        letter-spacing: 2px;
+        color: var(--muted)
+    }
+
+    .scene {
+        height: 180px;
+        position: relative;
+        overflow: hidden;
+        background: radial-gradient(ellipse at 50% 50%, #2e3f55, transparent 70%);
+        margin: 12px 0
+    }
+
+    .scene svg {
+        height: 180px;
+        width: 100%
+    }
+
+    .monitor {
+        fill: #0d1521;
+        stroke: #8397af;
+        stroke-width: 2
+    }
+
+    .screenline {
+        stroke: var(--a);
+        stroke-width: 3
+    }
+
+    .ai .screenline {
+        stroke: var(--b)
+    }
+
+    .working .screenline {
+        animation: pulse 1s infinite alternate
+    }
+
+    .working .arm {
+        animation: typing .3s infinite alternate;
+        transform-origin: center
+    }
+
+    @keyframes pulse {
+        to {
+            opacity: .3
+        }
+    }
+
+    @keyframes typing {
+        to {
+            transform: translateY(2px)
+        }
+    }
+
+    .activity {
+        text-align: center;
+        color: var(--muted);
+        margin-top: -24px;
+        position: relative;
+        font-size: 13px
+    }
+
+    .kanban {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        margin: 18px 0
+    }
+
+    .col {
+        background: #111a28;
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 145px
+    }
+
+    .col h3 {
+        font-size: 11px;
+        margin: 0 0 9px;
+        color: var(--muted)
+    }
+
+    .ticket {
+        padding: 7px 5px;
+        margin-bottom: 5px;
+        background: #28374a;
+        border-left: 3px solid var(--a);
+        border-radius: 4px;
+        font-size: 11px
+    }
+
+    .ai .ticket {
+        border-color: var(--b)
+    }
+
+    .ticket.bug {
+        border-color: #ff7e8c
+    }
+
+    .ticket progress {
+        width: 100%;
+        height: 4px;
+        accent-color: var(--b)
+    }
+
+    .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px
+    }
+
+    .metric {
+        background: #111a28;
+        padding: 12px;
+        border-radius: 8px
+    }
+
+    .metric strong {
+        display: block;
+        font-size: 21px;
+        font-variant-numeric: tabular-nums
+    }
+
+    .metric span {
+        font-size: 12px;
+        color: var(--muted)
+    }
+
+    details {
+        margin-top: 16px;
+        border-top: 1px solid var(--line);
+        padding-top: 14px
+    }
+
+    summary {
+        cursor: pointer;
+        font-weight: 600
+    }
+
+    .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 20px
+    }
+
+    .chart {
+        width: 100%;
+        height: 150px;
+        background: #111a28;
+        border-radius: 8px
+    }
+
+    .result {
+        padding: 18px;
+        background: #1b2d35;
+        border-radius: 12px;
+        margin: 18px 0;
+        line-height: 1.6
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px
+    }
+
+    td,
+    th {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 1px solid var(--line)
+    }
+
+    a {
+        color: var(--b)
+    }
+
+    .note {
+        font-size: 13px
+    }
+
+    .global {
+        background: var(--panel);
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px
+    }
+
+    .global label {
+        display: inline-flex;
+        margin: 8px 12px 8px 0
+    }
+
+    #clock {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700
+    }
+
+    .legend {
+        color: var(--muted);
+        font-size: 12px
+    }
+
+    @media(max-width:850px) {
+        .split {
+            grid-template-columns: 1fr
+        }
+
+        header,
+        main,
+        footer {
+            padding: 14px
+        }
+
+        .controls {
+            grid-template-columns: 1fr
+        }
+
+        .kanban {
+            gap: 3px
+        }
+
+        .col {
+            padding: 5px
+        }
+
+        h1 {
+            font-size: 25px
+        }
+    }
+</style>
+<header>
+    <div class="tag">LABORATÓRIO DE ENTREGA / MODELO EXPLORATÓRIO</div>
+    <h1>Dois caminhos para software funcionando</h1>
+    <p>O mesmo backlog, dois processos. Explore velocidade, qualidade e custo — incluindo revisão, retrabalho e limites
+        do paralelismo.</p>
+    <div class="toolbar"><button class="primary" id="play">Iniciar</button><button id="step">+ 8 horas</button><button
+            id="reset">Reiniciar</button><button id="finish">Concluir período</button><button id="batch">100
+            execuções</button><button id="export">Exportar resultado JSON</button><span id="clock">0 h / dia
+            0</span><label>Velocidade <select id="speed">
+                <option value="1">1×</option>
+                <option value="8" selected>8×</option>
+                <option value="32">32×</option>
+            </select></label></div>
+</header>
+<main>
+    <div class="global"><label>Horizonte (dias úteis) <input id="days" type="number" min="5" max="120"
+                value="30"></label><label>Itens no backlog <input id="n" type="number" min="10" max="200"
+                value="60"></label><label>Semente <input id="seed" type="number" min="1" max="999999"
+                value="42"></label><label>Complexidade <select id="complex">
+                <option value="0.6">Baixa</option>
+                <option value="1" selected>Média</option>
+                <option value="1.8">Alta</option>
+            </select></label>
+        <p class="note">Alterações reiniciam a experiência. Uma jornada tem 8 horas; agentes também trabalham somente
+            nessa janela. Custos em USD, valores ilustrativos editáveis. Não é uma previsão de desempenho real.</p>
+    </div>
+    <div class="split" id="sides"></div>
+    <div class="result" id="verdict">Inicie a simulação para observar o fluxo.</div>
+    <div id="batchResult"></div>
+    <details>
+        <summary>Como o modelo funciona • premissas, fórmulas e limites</summary>
+        <p>Todos os itens chegam no instante zero. Tamanhos variam de 4 a 14 horas-base × complexidade; cada lado recebe
+            exatamente os mesmos itens. Etapas: descoberta (12%), implementação (53%), validação (25%) e deploy (10%).
+            Esses tempos e todas as probabilidades são hipóteses didáticas, não médias de mercado.</p>
+        <p>Três modos de IA: assistente usa uma pessoa em todas as etapas; especificações usa descoberta humana com 50%
+            de esforço adicional, implementação e deploy com agentes e validação integral humana; fábrica usa agentes em
+            todas as etapas, com bloqueio humano antes de decisões críticas na descoberta e validações de alto impacto.
+            Cada bloqueio exige 30% do esforço da etapa e o restante é automatizado. Os atributos de criticidade e
+            impacto são sorteados por item, permanecem nas correções e respeitam os percentuais configurados. A
+            especificação reduz apenas a probabilidade de rejeição funcional, conforme a entrada configurada; não reduz
+            automaticamente bugs. Esses parâmetros são hipóteses, não efeitos comprovados.</p>
+        <p>Todos os agentes compartilham o limite de paralelismo; os itens respeitam WIP. A fração de orquestração reduz
+            capacidade disponível humana e dos agentes para representar coordenação. Horas humanas ativas medem execução
+            e bloqueios; intervenções críticas contam bloqueios concluídos. O custo humano continua cobrando a pessoa
+            reservada durante todo o período, mesmo quando atua pontualmente; não pressupõe que sua capacidade liberada
+            gera economia automaticamente. Os estudos de mercado calibram somente o modo assistente. Nos demais modos, o
+            multiplicador de tempo é experimental e não acumula ganhos desses estudos.</p>
+        <p>Defeito por tentativa = risco-base × fator TDD × fator par × fator refatoração. Descoberta de defeitos na
+            validação = 20% + 45 pontos com QA + 15 com CI (máximo 95%). Rejeição funcional usa a probabilidade
+            configurada e é sempre identificada na validação. Cada falha retorna à implementação com 35% do esforço-base
+            e repete validação e deploy. Um defeito escapado é detectado após 4 horas com observabilidade ou 24 sem ela;
+            o item retorna ao backlog como BUG, aguarda no mínimo 0,5h e concorre pelo limite WIP. Bugs têm prioridade
+            na entrada, sem interromper itens em andamento; pulam descoberta e seguem implementação → validação →
+            deploy. O início original é preservado para o cycle time. Além de defeitos escapados, cada deploy pode
+            revelar uma falha adicional de integração/ambiente, sorteada com a probabilidade configurada × os fatores de
+            TDD, par e refatoração. O padrão de 10% é uma hipótese didática editável, não dado de mercado. Um item gera
+            no máximo um incidente por deploy; reincidências são contadas separadamente. Até a descoberta, a entrega
+            parece boa nos indicadores observáveis. O gráfico usa o estado verdadeiro simulado, incluindo defeitos
+            latentes, que não seriam conhecidos num sistema real.</p>
+        <p>Efeitos hipotéticos: TDD +15% implementação e ×0,65 defeitos; par ×0,85 tempo humano e ×0,8 defeitos,
+            cobrando duas pessoas durante toda a janela; refatoração +10% implementação e ×0,8 defeitos; CI +0,15h de
+            validação e ×0,7 tempo de deploy; CD ×0,4 tempo de deploy, sem CD releases em lotes a cada 8h; QA +30%
+            validação; observabilidade +0,1h deploy. Nenhum coeficiente dessas práticas foi inferido causalmente dos
+            estudos citados. Não há dívida técnica acumulada, incidentes compartilhados, feriados ou manutenção futura
+            além dos bugs simulados.</p>
+        <p>Custo humano = horas decorridas × custo/h × pessoas (inclui espera, revisão e ociosidade). Tokens =
+            horas-agente efetivamente executadas × tokens/h, incluindo retrabalho e todas as etapas automatizadas. Custo
+            IA = tokens de entrada × preço entrada / milhão + tokens de saída × preço saída / milhão + assinatura mensal
+            × horas / 160. Não inclui infraestrutura, caches ou ferramentas externas.</p>
+        <p>Lead time e cycle time são médias até o primeiro deploy, em horas úteis: chegada → deploy e início → deploy.
+            Throughput = primeiros deploys / semanas decorridas (40h). Bugs descobertos = número acumulado de incidentes
+            (inclui reincidências). Itens afetados / implantados = itens distintos com incidente / itens com primeiro
+            deploy. Incidentes / 100 deploys usa todos os deploys, inclusive correções. Correções implantadas conta
+            incidentes com novo deploy; esse deploy pode gerar uma nova falha, portanto não garante ausência de
+            reincidência. Bugs no backlog e em correção mostram o estoque atual. Assertividade = itens aprovados na
+            primeira validação / itens já avaliados. Entregas úteis = implantadas, aceitas e sem defeito no estado
+            verdadeiro atual. Custo/útil considera todo custo incorrido, inclusive trabalho ainda em andamento. Nenhum
+            indicador de fluxo sozinho mede valor de negócio.</p>
+        <p>As 100 execuções variam a semente e preservam os mesmos itens e sorteios de risco para os dois lados em cada
+            par. Intervalos P10–P90 expressam variabilidade do modelo, não intervalos de confiança dos estudos. Comparar
+            pessoas exige contexto; esta simulação compara configurações de processo.</p>
+    </details>
+    <details open>
+        <summary>Evidências e cenários • o que foi medido</summary>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fonte</th>
+                    <th>Resultado / contexto</th>
+                    <th>Uso nesta simulação</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="https://www.microsoft.com/en-us/research/publication/the-effects-of-generative-ai-on-high-skilled-work-evidence-from-three-field-experiments-with-software-developers/"
+                            target="_blank" rel="noopener">Cui et al., três estudos de campo</a></td>
+                    <td>4.867 desenvolvedores; +26,08% tarefas concluídas (erro padrão 10,3%). Assistência de código.
+                    </td>
+                    <td>Multiplicador de tempo 1/1,2608 ≈ 0,793. Conversão ilustrativa de throughput em tempo sob
+                        capacidade constante.</td>
+                </tr>
+                <tr>
+                    <td><a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/"
+                            target="_blank" rel="noopener">METR, julho/2025</a></td>
+                    <td>16 mantenedores, 246 tarefas em repositórios conhecidos; +19% tempo com ferramentas do início de
+                        2025.</td>
+                    <td>Multiplicador 1,19. Não representa todas as pessoas nem ferramentas atuais.</td>
+                </tr>
+                <tr>
+                    <td><a href="https://arxiv.org/abs/2302.06590" target="_blank" rel="noopener">Peng et al., 2023</a>
+                    </td>
+                    <td>Tarefa controlada: servidor HTTP em JavaScript; redução de 55,8% do tempo.</td>
+                    <td>Multiplicador 0,442. Cenário otimista e delimitado; não evidência de ganho no SDLC completo.
+                    </td>
+                </tr>
+                <tr>
+                    <td><a href="https://metr.org/blog/2026-02-24-uplift-update/" target="_blank" rel="noopener">METR,
+                            fevereiro/2026</a></td>
+                    <td>Atualização discute dificuldades de seleção e medição com ferramentas mais recentes.</td>
+                    <td>Não convertemos a atualização em um ganho universal para 2026.</td>
+                </tr>
+                <tr>
+                    <td><a href="https://dora.dev/research/2025/dora-report/" target="_blank" rel="noopener">DORA
+                            2025</a></td>
+                    <td>Contexto organizacional de desenvolvimento assistido por IA.</td>
+                    <td>Referência complementar; nenhum multiplicador causal extraído.</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Orquestração de ponta a ponta, taxa de bugs, preços e efeitos combinados das práticas são entradas
+            hipotéticas. Os cenários não somam percentuais de pesquisas diferentes. Fontes consultadas em 30/09/2026.
+        </p>
+    </details>
+    <details id="references2026">
+        <summary>Referências de 2026 • resultados, contexto e uso no simulador</summary>
+        <p>Pesquisa atualizada em 30/09/2026. Publicação em 2026 não implica coleta em 2026 nem avaliação das
+            ferramentas mais recentes. Os novos cenários são alternativas, não ganhos somados. Aplicam-se somente ao
+            modo assistente; especificações e fábrica continuam usando hipóteses ajustáveis.</p>
+        <h3>1. Echoes of AI — Borg et al. · 09/06/2026</h3>
+        <p><a href="https://link.springer.com/article/10.1007/s10664-026-10889-1" target="_blank" rel="noopener">Artigo
+                em Empirical Software Engineering</a> · estudo com 151 participantes em duas fases, 95% profissionais,
+            realizado em 2024. Na primeira fase, observacional, o uso de assistentes esteve associado a redução mediana
+            de 30,7% do tempo para desenvolver uma feature em uma aplicação web Java. A segunda fase, randomizada, não
+            encontrou diferenças significativas na evolução posterior em tempo ou qualidade. A primeira fase não
+            randomizou o uso de IA; preferências e experiência podem influenciar o resultado.</p>
+        <p><b>No simulador:</b> novo cenário padrão para o assistente, tempo ×0,693 somente na implementação e
+            correções. Essa localização do ganho é uma aproximação, não resultado por etapa. Não reduz bugs, rejeição
+            funcional ou esforço de manutenção automaticamente. Não é evidência de ganho de 30,7% no processo inteiro.
+        </p>
+        <h3>2. METR — atualização do experimento · 24/02/2026</h3>
+        <p><a href="https://metr.org/blog/2026-02-24-uplift-update/" target="_blank" rel="noopener">Atualização
+                metodológica e resultados preliminares</a> · experimento iniciado em agosto/2025: 57 desenvolvedores,
+            143 repositórios, mais de 800 tarefas. Nos participantes anteriores, estimativa de −18% no tempo, com
+            intervalo de −38% a +9%; nos novos, −4%, intervalo de −15% a +9%. A METR aponta seleção de tarefas e
+            participantes, mudança de remuneração e dificuldade de medir trabalho com agentes concorrentes.</p>
+        <p><b>No simulador:</b> dois cenários exploratórios, ×0,82 e ×0,96 no tempo humano. Intervalos cruzam efeito
+            nulo e atraso; as estimativas não são calibração confiável de ferramentas atuais nem de fábricas autônomas.
+            Os intervalos da pesquisa não são usados nas 100 execuções: estas variam somente tarefas e defeitos do
+            modelo.</p>
+        <h3>3. Meta-análise — Maier et al. · 06/05/2026</h3>
+        <p><a href="https://arxiv.org/abs/2605.04779" target="_blank" rel="noopener">Preprint: produtividade e
+                aprendizagem em programação</a> · síntese de 23 estudos, 27 tamanhos de efeito, publicados entre 2019 e
+            2025. Produtividade: Hedges g = 0,33, IC95% [0,09; 0,58], com heterogeneidade relevante. Efeitos maiores em
+            ambientes controlados e menores em empresas e open source. Aprendizagem sem efeito estatisticamente
+            significativo.</p>
+        <p><b>No simulador:</b> referência de interpretação, sem multiplicador. g = 0,33 é efeito padronizado, não “33%
+            mais produtividade”. Converter para horas exigiria métricas e distribuições comparáveis.</p>
+        <h3>4. Anthropic — formação de competências · 29/01/2026</h3>
+        <p><a href="https://www.anthropic.com/research/AI-assistance-coding-skills" target="_blank"
+                rel="noopener">Estudo sobre aprender uma nova biblioteca Python</a> · experimento randomizado com 52
+            engenheiros, majoritariamente juniores, aprendendo Trio. O ganho de velocidade não foi estatisticamente
+            significativo. A avaliação de compreensão imediata foi inferior no grupo com IA; o modo de interação
+            influenciou o aprendizado. Estudo de fornecedor, amostra pequena e tarefa de aprendizagem.</p>
+        <p><b>No simulador:</b> referência explicativa, sem bônus de velocidade ou penalidade automática de bugs. O
+            estudo não mede defeitos em produção; aprendizagem e compreensão são dimensões que o modelo atual não
+            representa.</p>
+        <p><b>Como interpretar:</b> compare cenários, mantenha práticas e backlog iguais e calibre com dados locais. Não
+            há nestas referências uma estimativa validada para desenvolvimento dirigido por especificações ou
+            orquestração de ponta a ponta com intervenção humana pontual.</p>
+    </details>
+</main>
+<footer class="note">Um experimento para discutir premissas e gargalos. Calibre com dados do seu time antes de usar para
+    decisões.</footer>
+<script>
+    const $ = id => document.getElementById(id), names = ['Backlog', 'Descoberta', 'Implementação', 'Validação', 'Produção']; let time = 0, running = false, states = [], history = [];
+    const practices = [['tdd', 'TDD'], ['pair', 'Programação em par (2 pessoas)'], ['refactor', 'Refatoração'], ['ci', 'Integração contínua'], ['cd', 'Deploy contínuo'], ['obs', 'Observabilidade'], ['qa', 'QA / validação']];
+    const scene = `<div class="scene"><svg viewBox="0 0 500 180" role="img" aria-label="Desenvolvedor visto de costas, sentado ao computador"><rect class="monitor" x="190" y="12" width="120" height="66" rx="6"/><path class="screenline" d="M204 28h73m-73 13h90m-90 13h50m-50 13h80"/><path stroke="#74879f" stroke-width="7" d="M250 78v12m-22 0h44"/><path stroke="#8397af" stroke-width="8" d="M112 98h276m-240 0v70m200-70v70"/><ellipse cx="250" cy="66" rx="21" ry="23" fill="#b69883"/><path d="M228 62q-3-35 23-27q26-5 21 30l-10-17-30 4" fill="#27303c"/><path d="M214 124v-26q36-21 72 0v26" fill="#62758d"/><path class="arm" d="M218 97l-35 6m99-6 35 6" stroke="#62758d" stroke-width="14" stroke-linecap="round"/><rect x="214" y="111" width="72" height="51" rx="16" fill="#263144" stroke="#74879f" stroke-width="2"/><path d="M250 162v12m-25 0h50" stroke="#74879f" stroke-width="5"/></svg></div>`;
+    function number(i, key, label, value, min, max, step = 1) { return `<label>${label}<input id="${i}-${key}" type="number" value="${value}" min="${min}" max="${max}" step="${step}"></label>` }
+    $('sides').innerHTML = [0, 1].map(i => `<section class="side ${i ? 'ai' : ''}"><div class="tag">${i ? 'ASSISTÊNCIA | ESPECIFICAÇÃO | ORQUESTRAÇÃO' : 'IMPLEMENTAÇÃO MANUAL'}</div><h2>${i ? 'Desenvolvedor com IA' : 'Desenvolvedor sem IA'}</h2>${scene}<div class="activity" id="activity${i}">Aguardando início</div><div class="kanban" id="board${i}"></div><div class="metrics" id="metrics${i}"></div><p class="legend">Entregas úteis acumuladas no estado atual • mesma escala nos dois gráficos</p><svg class="chart" id="chart${i}" viewBox="0 0 500 150" aria-label="Gráfico de entregas úteis"></svg>${i ? `<details><summary>Configurar uso da IA e cenário de produtividade</summary><label>Modo de uso da IA <select id="workflow"><option value="assistant">IA como assistente</option><option value="specs">Desenvolvimento dirigido por especificações</option><option value="factory" selected>Orquestração de agentes / Fábrica IA</option></select></label><p class="note" id="workflowNote"></p><label>Cenário de produtividade do assistente <select id="scenario"><option value="echo2026" selected>2026 · Java / Echoes of AI (dados de 2024)</option><option value="metr26old">2026 · METR / participantes anteriores (exploratório)</option><option value="metr26new">2026 · METR / novos participantes (exploratório)</option><option value="field">Estudos de campo / referência histórica</option><option value="metr">Manutenção madura / METR</option><option value="lab">Tarefa delimitada</option><option value="neutral">Controle / sem efeito de IA</option></select></label><div class="note" id="scenarioNote"></div></details>` : ''}<details open><summary>Configurar práticas e custos</summary><div class="controls">${practices.map(([k, l]) => `<label>${l}<input type="checkbox" id="${i}-${k}" ${['ci', 'cd', 'qa', 'obs'].includes(k) ? 'checked' : ''}></label>`).join('')}${number(i, 'hour', 'USD / pessoa-hora', 50, 0, 1000)}${number(i, 'wip', 'Limite WIP', i ? 4 : 2, 1, 12)}${number(i, 'risk', 'Defeito por tentativa (%)', 20, 0, 95)}${number(i, 'reject', 'Rejeição funcional (%)', 10, 0, 95)}${number(i, 'production', 'Falhas adicionais por deploy (%)', 10, 0, 100)}${i ? number(i, 'agents', 'Agentes simultâneos', 3, 1, 12) + number(i, 'factor', 'Tempo-agente / tempo manual', .6, .1, 3, .05) + number(i, 'overhead', 'Orquestração humana (%)', 25, 0, 80) + number(i, 'tokens', 'Tokens / hora-agente', 80000, 0, 10000000, 1000) + number(i, 'input', 'USD / milhão tokens entrada', 3, 0, 1000, .1) + number(i, 'output', 'USD / milhão tokens saída', 15, 0, 1000, .1) + number(i, 'share', 'Fração de saída (%)', 20, 0, 100) + number(i, 'subscription', 'Assinatura USD / mês', 20, 0, 5000) + number(i, 'clarity', 'Especificações: redução rejeição (%)', 30, 0, 90) + number(i, 'critical', 'Itens com decisão crítica (%)', 25, 0, 100) + number(i, 'impact', 'Itens de alto impacto (%)', 30, 0, 100) : ''}</div><p class="note">Falhas adicionais: problemas de integração ou ambiente não cobertos pela validação. Probabilidade hipotética por deploy, reduzida por TDD, par e refatoração.</p><div class="note" id="effects${i}"></div><div class="note" id="buglog${i}"></div></details></section>`).join('');
+    function val(id) { return Number($(id).value) } function config(i) { let c = {}; practices.forEach(([k]) => c[k] = $(i + '-' + k).checked);['hour', 'wip', 'risk', 'reject', 'production'].forEach(k => c[k] = val(i + '-' + k)); if (i) ['agents', 'factor', 'overhead', 'tokens', 'input', 'output', 'share', 'subscription', 'clarity', 'critical', 'impact'].forEach(k => c[k] = val(i + '-' + k)); return c }
+    function rand(seed, id, attempt, channel) { let x = (seed + Math.imul(id + 1, 374761393) + Math.imul(attempt + 1, 668265263) + channel * 1274126177) | 0; x = Math.imul(x ^ (x >>> 13), 1274126177); return ((x ^ (x >>> 16)) >>> 0) / 4294967296 }
+    function workflow() { return $('workflow').value } function mode() { return workflow() === 'assistant' ? $('scenario').value : 'agents' } function multiplier(c) { return { echo2026: 1, metr26old: .82, metr26new: .96, field: 1 / 1.2608, metr: 1.19, lab: .442, neutral: 1 }[mode()] ?? c.factor }
+    function init(seed = val('seed')) { time = 0; history = []; states = [0, 1].map(i => ({ c: config(i), tokens: 0, humanHours: 0, interventions: 0, incidents: [], deploys: 0, items: Array.from({ length: val('n') }, (_, id) => ({ id, base: (4 + 10 * rand(seed, id, 0, 0)) * val('complex'), stage: 0, left: 0, full: 0, attempt: 0, start: null, first: null, deployed: null, bad: false, everBug: false, bugPending: false, bugCount: 0, returned: null, firstPass: null, seed, critical: rand(seed, id, 0, 5) < (i ? config(i).critical / 100 : 0), highImpact: rand(seed, id, 0, 6) < (i ? config(i).impact / 100 : 0), gateLeft: 0 })) })); render() }
+    function effort(t, s, c, i) { let e = t.base * [0, .12, .53, .25, .1][s]; if (i && workflow() === 'specs' && s === 1) e *= 1.5; if (s === 2) { if (t.attempt) e *= .35; if (c.tdd) e *= 1.15; if (c.refactor) e *= 1.1 } if (s === 3) { if (c.qa) e *= 1.3; if (c.ci) e += .15 } if (s === 4) { if (c.ci) e *= .7; if (c.cd) e *= .4; if (c.obs) e += .1 } return Math.max(.05, e) }
+    function enter(t, s, c, i) { t.stage = s; t.left = t.full = effort(t, s, c, i); t.gateLeft = i && workflow() === 'factory' ? ((s === 1 && t.critical) || (s === 3 && t.highImpact) ? t.full * .3 : 0) : 0 }
+    function useful(s) { return s.items.filter(t => t.stage === 5 && !t.bad).length } function cost(s, i) { let c = s.c; return time * c.hour * (c.pair ? 2 : 1) + (i ? s.tokens * ((1 - c.share / 100) * c.input + c.share / 100 * c.output) / 1e6 + c.subscription * time / 160 : 0) }
+    function riskFactor(c) { return (c.tdd ? .65 : 1) * (c.pair ? .8 : 1) * (c.refactor ? .8 : 1) }
+    function tick() {
+        const dt = .125; if (time >= val('days') * 8) { running = false; return } time += dt; states.forEach((s, i) => {
+            let c = s.c, agentMode = i && mode() === 'agents'; for (let t of s.items) { if (t.stage === 5 && t.bad && time - t.deployed >= (c.obs ? 4 : 24)) { t.everBug = true; t.bugCount++; t.bugPending = true; t.returned = time; t.attempt++; t.stage = 0; t.left = 0; s.incidents.push({ item: t.id + 1, discovered: time, resolved: null }) } } let active = s.items.filter(t => t.stage > 0 && t.stage < 5).length; for (let t of [...s.items].sort((a, b) => Number(b.bugPending) - Number(a.bugPending) || a.id - b.id)) { if (t.stage === 0 && active < c.wip && (!t.bugPending || time - t.returned >= .5)) { if (t.start === null) t.start = time; enter(t, t.bugPending ? 2 : 1, c, i); active++ } }
+            let human = dt * (agentMode ? 1 - c.overhead / 100 : 1) * (c.pair ? 1 / .85 : 1), slots = agentMode ? c.agents : 0;
+            // Human reviews first. Agent work never consumes an extra human worker.
+            let queue = s.items.filter(t => t.stage > 0 && t.stage < 5).sort((a, b) => (b.stage === 3) - (a.stage === 3) || a.id - b.id);
+            for (let t of queue) {
+                let factory = i && workflow() === 'factory'; if (factory && t.gateLeft > 0) { let review = Math.min(t.gateLeft, human); t.gateLeft -= review; t.left -= review; human -= review; s.humanHours += review * (c.pair ? .85 : 1); if (t.gateLeft > 1e-8) continue; s.interventions++ } let agent = agentMode && (factory || (t.stage !== 3 && t.stage !== 1)); if (agent && slots <= 0) continue; if (!agent && human <= 0) continue; let amount; if (agent) { slots--; let raw = dt * (1 - c.overhead / 100); amount = raw / multiplier(c); let actual = Math.min(raw, t.left * multiplier(c)); s.tokens += actual * c.tokens } else { let factor = i && !agentMode ? (mode() === 'echo2026' && t.stage === 2 ? .693 : multiplier(c)) : 1; amount = Math.min(t.left, human / factor); human -= amount * factor; s.humanHours += amount * factor * (c.pair ? .85 : 1); if (i && mode() !== 'neutral') s.tokens += amount * factor * c.tokens } t.left -= amount; if (t.left > 1e-8) continue;
+                if (t.stage === 2) { let risk = c.risk / 100 * riskFactor(c); t.bad = rand(t.seed, t.id, t.attempt, 1) < risk; enter(t, 3, c, i) } else if (t.stage === 3) { let reject = rand(t.seed, t.id, t.attempt, 2) < c.reject / 100 * (i && workflow() === 'specs' ? 1 - c.clarity / 100 : 1); let detect = t.bad && rand(t.seed, t.id, t.attempt, 3) < Math.min(.95, .2 + (c.qa ? .45 : 0) + (c.ci ? .15 : 0)); if (t.firstPass === null) t.firstPass = !(reject || detect); if (reject || detect) { t.attempt++; enter(t, 2, c, i) } else enter(t, 4, c, i) } else if (t.stage === 4) { if (!c.cd && Math.floor(time / 8) === Math.floor((time - dt) / 8)) { t.left = 0; continue } if (t.bugPending) { let incident = [...s.incidents].reverse().find(e => e.item === t.id + 1 && e.resolved === null); if (incident) incident.resolved = time; t.bugPending = false } t.bad = t.bad || rand(t.seed, t.id, t.attempt, 4) < c.production / 100 * riskFactor(c); s.deploys++; t.stage = 5; t.deployed = time; if (t.first === null) t.first = time } else enter(t, t.stage + 1, c, i)
+            }
+        }); if (Math.round(time * 8) % 8 === 0) history.push([time, ...states.map(useful)])
+    }
+    function metrics(s, i) { let deployed = s.items.filter(t => t.first !== null), evaluated = s.items.filter(t => t.firstPass !== null), avg = fn => deployed.length ? (deployed.reduce((a, t) => a + fn(t), 0) / deployed.length).toFixed(1) + ' h' : '—', money = cost(s, i), u = useful(s); return [['Entregas úteis', u], ['Primeiros deploys', deployed.length], ['Throughput / semana', time ? (deployed.length / (time / 40)).toFixed(1) : '—'], ['Lead time médio', avg(t => t.first)], ['Cycle time médio', avg(t => t.first - t.start)], ['Bugs de produção descobertos', s.incidents.length], ['Itens afetados / implantados', deployed.length ? (100 * deployed.filter(t => t.everBug).length / deployed.length).toFixed(1) + '%' : '—'], ['Incidentes / 100 deploys', s.deploys ? (100 * s.incidents.length / s.deploys).toFixed(1) : '—'], ['Bugs no backlog', s.items.filter(t => t.stage === 0 && t.bugPending).length], ['Bugs em correção', s.items.filter(t => t.stage > 0 && t.stage < 5 && t.bugPending).length], ['Correções implantadas', s.incidents.filter(e => e.resolved !== null).length], ['Assertividade 1ª validação', evaluated.length ? (100 * evaluated.filter(t => t.firstPass).length / evaluated.length).toFixed(0) + '%' : '—'], ['Custo total', '$' + money.toFixed(0)], ['Custo / entrega útil', u ? '$' + (money / u).toFixed(0) : '—'], ['Horas humanas ativas', s.humanHours.toFixed(1) + ' h'], ['Intervenções críticas', s.interventions], ['Tokens consumidos', i ? (s.tokens / 1e6).toFixed(2) + ' M' : '0'], ['Retrabalhos', s.items.reduce((a, t) => a + t.attempt, 0)], ['Defeitos latentes (modelo)', s.items.filter(t => t.stage === 5 && t.bad).length]] }
+    function render() { $('clock').textContent = `${time.toFixed(1)} h / dia ${(time / 8).toFixed(1)}`; $('play').textContent = running ? 'Pausar' : 'Iniciar'; states.forEach((s, i) => { $('metrics' + i).innerHTML = metrics(s, i).map(([k, v]) => `<div class="metric"><strong>${v}</strong><span>${k}</span></div>`).join(''); $('board' + i).innerHTML = names.map((name, col) => { let list = s.items.filter(t => col === 4 ? t.stage >= 4 : t.stage === col); return `<div class="col"><h3>${i && workflow() === 'specs' && col === 1 ? 'Especificação' : name} (${list.length})</h3>${list.sort((a, b) => Number(b.bugPending) - Number(a.bugPending) || a.id - b.id).slice(0, 4).map(t => `<div class="ticket ${t.bugPending ? 'bug' : ''}" title="Item ${t.id + 1}; esforço ${t.base.toFixed(1)}h; tentativa ${t.attempt + 1}">#${String(t.id + 1).padStart(2, '0')} ${i && workflow() === 'factory' && t.gateLeft > 0 ? 'DECISÃO HUMANA' : t.bugPending ? 'BUG · ' + (t.stage === 0 ? 'aguarda' : 'correção') : t.stage === 5 ? '✓' : t.stage === 4 ? 'deploy' : t.attempt ? 'retrabalho' : ''}${t.stage > 0 && t.stage < 5 ? `<progress max="1" value="${1 - Math.max(0, t.left) / t.full}"></progress>` : ''}</div>`).join('')}${list.length > 4 ? `<small>+${list.length - 4} itens</small>` : ''}</div>` }).join(''); let c = s.c; $('effects' + i).innerHTML = `<p><b>Efeito das práticas nesta configuração</b><br>Implementação: ×${((c.tdd ? 1.15 : 1) * (c.refactor ? 1.1 : 1)).toFixed(3)} esforço · tempo humano: ×${c.pair ? '0,85' : '1,00'} · pessoas: ${c.pair ? 2 : 1}.<br>Defeito por tentativa: ${(c.risk * riskFactor(c)).toFixed(1)}% · falha adicional por deploy: ${(c.production * riskFactor(c)).toFixed(1)}%.<br>Detecção na validação: ${(100 * Math.min(.95, .2 + (c.qa ? .45 : 0) + (c.ci ? .15 : 0))).toFixed(0)}% · validação: ×${c.qa ? '1,30' : '1,00'}${c.ci ? ' + 0,15h' : ''}.<br>Deploy: ×${((c.ci ? .7 : 1) * (c.cd ? .4 : 1)).toFixed(2)}${c.obs ? ' + 0,1h' : ''} · ${c.cd ? 'contínuo' : 'lotes a cada 8h'}. Detecção em produção: ${c.obs ? 4 : 24}h.</p>`; $('buglog' + i).innerHTML = '<b>Últimos bugs de produção</b><br>' + (s.incidents.length ? s.incidents.slice(-5).reverse().map(e => `#${e.item} · descoberto ${e.discovered.toFixed(1)}h → ${e.resolved === null ? 'aguarda / em correção' : 'corrigido ' + e.resolved.toFixed(1) + 'h'}`).join('<br>') : 'Nenhum incidente descoberto até agora.'); let active = s.items.filter(t => t.stage > 0 && t.stage < 5); $('activity' + i).textContent = active.length ? `${active.length} itens em WIP · ${s.items.filter(t => t.stage === 3).length} na validação` : 'Sem trabalho em andamento'; document.querySelectorAll('.scene')[i].classList.toggle('working', running && active.length > 0); let max = Math.max(5, ...history.flatMap(h => h.slice(1))); let points = history.map(h => `${40 + h[0] / (val('days') * 8) * 440},${125 - h[i + 1] / max * 100}`).join(' '); $('chart' + i).innerHTML = `<path d="M40 15v110h440" stroke="#63748b" fill="none"/><polyline points="40,125 ${points}" stroke="${i ? '#6be0ca' : '#ffbd73'}" stroke-width="3" fill="none"/><text x="8" y="20" fill="#b0bfd0" font-size="12">${max}</text><text x="8" y="128" fill="#b0bfd0" font-size="12">0</text><text x="40" y="144" fill="#b0bfd0" font-size="12">0h</text><text x="425" y="144" fill="#b0bfd0" font-size="12">${val('days') * 8}h</text>` }); let a = useful(states[0]), b = useful(states[1]); $('verdict').textContent = time ? `No mesmo período: manual ${a} entregas úteis; IA ${b}. Custo total: $${cost(states[0], 0).toFixed(0)} e $${cost(states[1], 1).toFixed(0)}. Compare custo por entrega e qualidade; não existe um vencedor único quando os objetivos divergem.` : 'Inicie a simulação para observar o fluxo.' }
+    const notes = { echo2026: 'Borg et al., publicação de junho/2026, dados de 2024: redução mediana observacional de 30,7% no tempo de desenvolvimento de uma feature Java. Aqui, ×0,693 somente na implementação (inclusive correções); outras etapas ficam ×1. Atribuição por etapa é hipótese de modelagem, não decomposição medida no estudo. Não altera bugs.', metr26old: 'METR, atualização fev/2026 com dados de 2025: participantes anteriores, −18% tempo (IC −38% a +9%). ×0,82 aplicado ao trabalho humano como aproximação; estimativa frágil com seleção de tarefas e participantes. Não calibra fábrica com agentes.', metr26new: 'METR, atualização fev/2026 com dados de 2025: novos participantes, −4% tempo (IC −15% a +9%). ×0,96 aplicado ao trabalho humano como aproximação; IC inclui ausência de ganho e atraso. Cenário exploratório, não efeito causal confiável.', agents: 'Experimental: agentes automatizam descoberta, implementação e deploy; validação humana é o gargalo. Todos os ganhos são hipóteses configuráveis.', field: 'Âncora de campo: +26,08% tarefas → multiplicador ilustrativo de tempo 0,793. Uma pessoa com assistente, sem agentes paralelos.', metr: 'Âncora METR 2025: tempo ×1,19 em manutenção de projetos maduros. Uma pessoa com assistente.', lab: 'Âncora Peng 2023: tempo ×0,442 numa tarefa delimitada. Extrapolação otimista para o fluxo; não validação ponta a ponta.', neutral: 'Controle: mesmo tempo e capacidade nos dois lados; tokens desativados. Com práticas iguais, os resultados de fluxo devem coincidir.' };
+    const workflowNotes = { assistant: 'A pessoa conduz todas as etapas, usando IA como apoio. Sem execução paralela de agentes. A referência selecionada define o multiplicador de tempo.', specs: 'A pessoa escreve e valida especificações (+50% esforço de descoberta) e revisa toda implementação. Agentes implementam e fazem deploy; especificações reduzem a rejeição funcional conforme o parâmetro configurado.', factory: 'Agentes executam todas as etapas. A pessoa atua apenas em decisões críticas e validações de alto impacto, antes de liberar a etapa. Frações configuráveis de itens recebem revisão humana equivalente a 30% do esforço da etapa.' };
+    function update() { running = false; document.querySelectorAll('input[type=number]').forEach(e => { if (!Number.isFinite(+e.value)) e.value = e.min; e.value = Math.max(+e.min, Math.min(+e.max, +e.value)) }); $('scenarioNote').textContent = notes[mode()];['agents', 'factor', 'overhead'].forEach(k => $('1-' + k).disabled = workflow() === 'assistant'); $('scenario').disabled = workflow() !== 'assistant'; $('1-clarity').disabled = workflow() !== 'specs';['critical', 'impact'].forEach(k => $('1-' + k).disabled = workflow() !== 'factory'); $('workflowNote').textContent = workflowNotes[workflow()]; if (workflow() !== 'assistant') $('scenarioNote').textContent = 'Modo experimental: ganhos, riscos e participação humana são hipóteses ajustáveis; os estudos de assistentes não calibram este processo.'; init(); $('batchResult').innerHTML = '' }
+    $('play').onclick = () => { running = !running; render() }; $('step').onclick = () => { running = false; for (let j = 0; j < 64; j++)tick(); render() }; $('reset').onclick = () => { running = false; init(); $('batchResult').innerHTML = '' }; $('finish').onclick = () => { running = false; while (time < val('days') * 8) tick(); render() }; document.querySelectorAll('input,select').forEach(e => { if (e.id !== 'speed') e.onchange = update });
+    $('batch').onclick = async () => { running = false; $('batch').disabled = true; let results = []; let original = val('seed'); for (let r = 0; r < 100; r++) { init(original + r); while (time < val('days') * 8) tick(); results.push(states.map((s, i) => ({ u: useful(s), cost: cost(s, i) }))); if (r % 10 === 0) { $('batchResult').textContent = `Examinando ${r + 1}/100 execuções…`; await new Promise(resolve => setTimeout(resolve, 0)) } } init(original); while (time < val('days') * 8) tick(); render(); let q = (a, p) => a.sort((x, y) => x - y)[Math.floor((a.length - 1) * p)]; $('batchResult').innerHTML = `<table><tr><th>100 sementes / hipótese atual</th><th>Manual</th><th>IA</th></tr><tr><td>Entregas úteis • mediana [P10–P90]</td>${[0, 1].map(i => { let a = results.map(r => r[i].u); return `<td>${q(a, .5)} [${q(a, .1)}–${q(a, .9)}]</td>` }).join('')}</tr><tr><td>Custo/útil mediano (execuções com entrega)</td>${[0, 1].map(i => { let a = results.filter(r => r[i].u).map(r => r[i].cost / r[i].u); return `<td>${a.length ? '$' + q(a, .5).toFixed(0) : '—'}; ${100 - a.length} sem entrega</td>` }).join('')}</tr></table><p class="note">IA teve mais entregas úteis em ${results.filter(r => r[1].u > r[0].u).length}% das execuções; empate em ${results.filter(r => r[1].u === r[0].u).length}%. Variabilidade simulada, não probabilidade científica de superioridade.</p>`; $('batch').disabled = false };
+    $('export').onclick = () => { let payload = { model: 'dois-caminhos-1.3', evidenceReviewDate: '2026-09-30', workflow: workflow(), scenario: mode(), seed: val('seed'), hours: time, horizonDays: val('days'), complexity: val('complex'), parameters: states.map(s => s.c), metrics: states.map(metrics), history, items: states.map(s => s.items), incidents: states.map(s => s.incidents), deploys: states.map(s => s.deploys) }; let url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })); let a = document.createElement('a'); a.href = url; a.download = 'resultado-simulacao.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) };
+    let last = performance.now(), acc = 0; function frame(now) { acc += Math.min(.5, (now - last) / 1000) * val('speed'); last = now; if (running) { let count = Math.floor(acc); acc -= count; for (let j = 0; j < count; j++)tick(); render() } else acc = 0; requestAnimationFrame(frame) } update(); requestAnimationFrame(frame);
+</script>
+
+</html>
