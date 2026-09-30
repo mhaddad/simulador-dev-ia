@@ -43,6 +43,7 @@ Em vez de olhar apenas para linhas de código geradas por minuto, o simulador mo
 - **Modelo Econômico Completo**:
   - Custo por hora de trabalho humano (inclui custos de fila, espera e revisão).
   - Custo de tokens de IA (tokens de entrada, tokens de saída e assinaturas mensais).
+  - Métrica dedicada de **Custo IA/Tokens** (valor absoluto e proporção % do custo total na coluna de IA).
   - Cálculo transparente de **Custo por Entrega Útil**.
 - **Análise Estatística (Monte Carlo / 100 Execuções)**:
   - Permite rodar 100 simulações com sementes sequenciais para avaliar distribuição de probabilidade e medianas com intervalos **P10–P90**.
